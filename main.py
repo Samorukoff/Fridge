@@ -33,8 +33,15 @@ async def start():
     dp.message.register(show_cart, F.text=='🛒 Просмотреть корзину')
     dp.callback_query.register(edit_cart_item_quantity, lambda c: c.data.startswith("edit_cart:"),
                         StateFilter(Cart.cart))
+    dp.message.register(back_to_cart, F.text=='❌ Отмена',
+                        StateFilter(Cart.choose_quantity))
+    dp.message.register(write_new_quantity, Cart.choose_quantity)
     dp.callback_query.register(delete_cart_item, lambda c: c.data.startswith("del_cart:"),
-                        StateFilter(Cart.cart)) 
+                        StateFilter(Cart.cart))
+    dp.message.register(purchase, F.text == '✅ Оформить заказ',
+                               StateFilter(Cart.cart))
+    dp.message.register(close_feed, F.text == '🚪 Выйти',
+                               StateFilter(Cart.cart)) 
     
 
     try:

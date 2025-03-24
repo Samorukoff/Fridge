@@ -23,7 +23,6 @@ async def show_feed (message: Message, state: FSMContext):
         #Выход из корзины
         data = await state.get_data()
         order_cards = data.get('order_cards', [])[::-1]
-        await message.answer('Выберите пункт меню', reply_markup=start_kb)
         for card in order_cards:
             await card.delete()
             await state.clear()
@@ -46,7 +45,10 @@ async def show_feed (message: Message, state: FSMContext):
 
     #Товаров больше нет - завершаем функцию
     if not items:
-        await message.answer("⚠️ Товаров больше нет")
+        msg = await message.answer("⚠️ Товаров больше нет")
+        await asyncio.sleep(3)
+        await message.delete()
+        await msg.delete()
         return
     
     #Создание ленты товаров, вывод карточек по порядку
@@ -97,8 +99,8 @@ async def close_feed(message: Message, state: FSMContext):
         await card.delete()
     await state.clear()
 
-#Достаем и записываем переменные ID и кол-ва единиц товара в наличии, запрашиваем ввод
-#необходимого кол-ва единиц товара
+#Достаем и записываем переменные ID, кол-ва единиц товара в наличии и цены,
+#запрашиваем ввод необходимого кол-ва единиц товара
 async def write_to_cart(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
 
@@ -107,16 +109,17 @@ async def write_to_cart(callback: CallbackQuery, state: FSMContext):
     user_id = callback.from_user.id
 
     cart_data = cart_sheet.get_all_records()
-    for row in cart_data:
-        if str(row.get("customer_id")) == str(user_id) and str(row.get("product_id")) == str(product_id):
-            msg = await callback.message.answer('❌ Товар уже находится в корзине!')
-            await asyncio.sleep(3)
-            await msg.delete()
-            return
+    row = next((r for r in cart_data if str(r.get("customer_id")) == str(user_id)
+                and str(r.get("product_id")) == str(product_id)), None)
+    if row:
+        msg = await callback.message.answer('❌ Товар уже находится в корзине!')
+        await asyncio.sleep(3)
+        await msg.delete()
+        return
 
     await state.set_state(ProductFeed.choose_quantity)
     tech_msg = await callback.message.answer('✍️ Введите количество единиц товара.',
-                                                     reply_markup=cancel_feed_pick_kb)
+                                                     reply_markup=cancel_pick_kb)
     await state.update_data(tech_msg=tech_msg, product_id=product_id,
                             availability=availability, price=price, user_id=user_id)
 
