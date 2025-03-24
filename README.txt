@@ -1,6 +1,8 @@
------Telegram-bot-for-fridge-cells-----
+-----Telegram bot for fridge cells-----
 
-        -----21.03.2025-----
+           @Fridge_Nil_Bot
+
+    -----last update 24.03.2025-----
                     
 -Libraries:
 ```bash
