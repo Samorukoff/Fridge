@@ -56,5 +56,5 @@ jobs:
           script: |
             cd /root/stazh/nikita2/Fridge-ChatBot
             echo "TOKEN=${{ secrets.TOKEN }}" > .env
-            echo "ADMIN_ID=${{ secrets.ADMIN_ID }}" > .env
+            echo "ADMIN_ID=${{ secrets.ADMIN_ID }}" >> .env
             echo "${{ secrets.CREDENTIALS_BASE64 }}" | base64 -d > credentials.json
