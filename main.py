@@ -39,7 +39,7 @@ async def start():
     #Админ
     dp.message.register(instruction, F.text=='📘 Инструкция',
                         StateFilter(Admin.admin_start))
-    dp.message.register(invite_link, F.text=='🔗 Ссылка на GoogleSheets',
+    dp.message.register(invite_link, F.text=='🔑 Создать ссылку-приглашение',
                         StateFilter(Admin.admin_start))
     dp.message.register(show_feed, F.text=='📜 Просмотреть ленту товаров',
                         StateFilter(Admin.admin_start))
