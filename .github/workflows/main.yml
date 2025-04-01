@@ -31,7 +31,7 @@ jobs:
           username: ${{ secrets.USERNAME }}
           password: ${{ secrets.PASSWORD }}
           script: |
-            mkdir -p /root/stazh/nikita2/
+            mkdir -p /root/stazh/nikita2/Fridge-ChatBot
 
       - name: Clone or update repository on server
         uses: appleboy/ssh-action@v0.1.6
@@ -40,7 +40,7 @@ jobs:
           username: ${{ secrets.USERNAME }}
           password: ${{ secrets.PASSWORD }}
           script: |
-            cd /root/stazh/nikita2/
+            cd /root/stazh/nikita2/Fridge-ChatBot
             if [ ! -d ".git" ]; then
               git clone https://github.com/Samorukoff/Fridge.git .
             else
@@ -54,6 +54,6 @@ jobs:
           username: ${{ secrets.USERNAME }}
           password: ${{ secrets.PASSWORD }}
           script: |
-            cd /root/stazh/nikita2/
+            cd /root/stazh/nikita2/Fridge-ChatBot
             echo "TOKEN=${{ secrets.TOKEN }}" > .env
             echo "${{ secrets.CREDENTIALS_BASE64 }}" | base64 -d > credentials.json
