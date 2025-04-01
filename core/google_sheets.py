@@ -19,3 +19,8 @@ workbook = client.open_by_key(workbook_id)
 feed_sheet = workbook.worksheet("feed_sheet")
 #Таблица корзины
 cart_sheet = workbook.worksheet("cart_sheet")
+#Таблица продавцов
+seller_sheet = workbook.worksheet("seller_sheet")
+#Таблица токенов для ссылок
+link_sheet = workbook.worksheet("link_sheet")
+

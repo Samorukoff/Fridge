@@ -4,9 +4,12 @@ from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
 
-from ..google_sheets import feed_sheet, cart_sheet
-from ..keyboards.inline import *
-from ..keyboards.reply import *
+from ...google_sheets import feed_sheet, cart_sheet
+
+from ..user_levels.customer_user import Customer
+
+from ...keyboards.inline import *
+from ...keyboards.reply import *
 
 class Cart(StatesGroup):
     cart = State()
@@ -15,15 +18,8 @@ class Cart(StatesGroup):
 #Вывод всех карточек товаров, находящихся в корзине
 async def show_cart(message: Message, state: FSMContext):
 
-    #Удаление ленты товаров
-    data = await state.get_data()
-    product_cards = data.get('product_cards',[])[::-1]
-    for card in product_cards:
-        await card.delete()
-    await state.clear()
-
     user_id = message.from_user.id
-
+    await state.update_data(user_id = user_id)
     feed_data = feed_sheet.get_all_records()
     cart_data = cart_sheet.get_all_records()[::-1]
 
@@ -31,7 +27,7 @@ async def show_cart(message: Message, state: FSMContext):
     if row:
         await state.set_state(Cart.cart)
     else:
-        await message.answer('❌ Корзина пуста', reply_markup=start_kb)
+        await message.answer('❌ Корзина пуста', reply_markup=customer_start_kb)
         return
 
     #Создание корзины, вывод карточек твоаров по порядку
@@ -66,16 +62,17 @@ async def show_cart(message: Message, state: FSMContext):
                     order_cards.append(order_card)
                     break
     await state.update_data(order_cards=order_cards)
-    await message.answer('🛒 Добро пожаловать в вашу корзину!', reply_markup=cart_kb)
+    await message.answer('🛒 Добро пожаловать в вашу корзину!', reply_markup=customer_cart_kb)
 
 #Выход из корзины
-async def close_feed(message: Message, state: FSMContext):
+async def close_cart(message: Message, state: FSMContext):
     data = await state.get_data()
     order_cards = data.get('order_cards', [])[::-1]
-    await message.answer('Выберите пункт меню', reply_markup=start_kb)
+    await message.answer('Выберите пункт меню', reply_markup=customer_start_kb)
     for card in order_cards:
         await card.delete()
     await state.clear()
+    await state.set_state(Customer.customer_start)
 
 #Достаем и записываем переменные ID, кол-ва единиц товара в наличии и цены,
 #запрашиваем ввод нового кол-ва единиц товара
@@ -83,13 +80,14 @@ async def edit_cart_item_quantity(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
     work_piece = callback.data.split(":")[1]
     product_id, availability, price = work_piece.split(",")
-    user_id = callback.from_user.id
+    data = await state.get_data()
+    user_id = data.get('user_id')
 
     await state.set_state(Cart.choose_quantity)
     tech_msg = await callback.message.answer ('✍️ Введите количество единиц товара.',
-                                                     reply_markup=cancel_pick_kb)
+                                                     reply_markup=cancel_kb)
     await state.update_data(tech_msg=tech_msg, product_id=product_id,
-                            availability=availability, price=price, user_id=user_id)
+                            availability=availability, price=price)
     
 #Отмена редактирования кол-ва выбранного товара
 async def back_to_cart(message: Message, state:FSMContext):
@@ -152,7 +150,7 @@ async def write_new_quantity(message: Message, state: FSMContext):
 
     #Удаляем старую корзину
     order_cards = data.get('order_cards', [])[::-1]
-    await message.answer('✅ Ваш заказ отредактирован\nПроверьте вашу корзину', reply_markup=start_kb)
+    await message.answer('✅ Ваш заказ отредактирован\nПроверьте вашу корзину', reply_markup=customer_start_kb)
     for card in order_cards:
         await card.delete()
     await state.clear()
@@ -171,19 +169,15 @@ async def delete_cart_item(callback: CallbackQuery, state: FSMContext):
     if row:
         row_index = cart_data.index(row) + 2
         cart_sheet.delete_rows(row_index)
+        await callback.message.delete()
+        msg = await callback.message.answer('✅ Товар успешно удален из корзины!', reply_markup=customer_start_kb)
+        await asyncio.sleep(3)
+        await msg.delete()
     else:
         msg = await callback.message.answer('⚠️ Ошибка: товар не найден в корзине!')
         await asyncio.sleep(3)
         await msg.delete()
         return
-
-    #Удаляем старую корзину
-    data = await state.get_data()
-    order_cards = data.get('order_cards', [])[::-1]
-    await callback.message.answer('✅ Ваш заказ отредактирован\nПроверьте вашу корзину', reply_markup=start_kb)
-    for card in order_cards:
-        await card.delete()
-    await state.clear()
 
 #Оформление заказа
 async def purchase(message: Message, state: FSMContext):
@@ -212,7 +206,8 @@ async def purchase(message: Message, state: FSMContext):
     #Удаляем старую корзину
     data = await state.get_data()
     order_cards = data.get('order_cards', [])[::-1]
-    await message.answer('✅ Ваш заказ принят в обработку', reply_markup=start_kb)
+    await message.answer('✅ Ваш заказ принят в обработку', reply_markup=customer_start_kb)
     for card in order_cards:
         await card.delete()
     await state.clear()
+    await state.set_state(Customer.customer_start)
