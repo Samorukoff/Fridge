@@ -1,0 +1,59 @@
+name: Deploy ChatBot
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11.4'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Ensure project directory exists on server
+        uses: appleboy/ssh-action@v0.1.6
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          password: ${{ secrets.PASSWORD }}
+          script: |
+            mkdir -p /root/stazh/nikita2/
+
+      - name: Clone or update repository on server
+        uses: appleboy/ssh-action@v0.1.6
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          password: ${{ secrets.PASSWORD }}
+          script: |
+            cd /root/stazh/nikita2/
+            if [ ! -d ".git" ]; then
+              git clone https://github.com/Samorukoff/Fridge.git .
+            else
+              git pull origin main
+            fi
+
+      - name: Create .env file and credentials.json on server
+        uses: appleboy/ssh-action@v0.1.6
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          password: ${{ secrets.PASSWORD }}
+          script: |
+            cd /root/stazh/nikita2/
+            echo "TOKEN=${{ secrets.TOKEN }}" > .env
+            echo "${{ secrets.CREDENTIALS_BASE64 }}" | base64 -d > credentials.json
