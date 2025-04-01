@@ -1,4 +1,4 @@
-name: Deploy ChatBot
+name: Deploy Fridge_ChatBot
 
 on:
   push:
