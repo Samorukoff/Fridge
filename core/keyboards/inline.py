@@ -3,6 +3,13 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from core.settings import settings
 from ..google_sheets import seller_sheet
 
+#Меню выбора единицы товара при создании карточки продавцов
+choose_prod_unit_kb = InlineKeyboardMarkup(inline_keyboard=
+                                     [[InlineKeyboardButton(text='килограмм', callback_data='unit:кг')],
+                                      [InlineKeyboardButton(text='литр', callback_data='unit:л')],
+                                      [InlineKeyboardButton(text='штука', callback_data='unit:шт.')],
+                                      [InlineKeyboardButton(text='упаковка', callback_data='unit:уп.')]])
+
 #Кнопки карточек в ленте товаров
 def add_to_cart_kb(user_id, product_id, availability, price):
     #Если пользователь админ либо продавец заместо добавления в корзину даем возможность удалить карточку

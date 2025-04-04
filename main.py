@@ -35,6 +35,12 @@ async def start():
                         StateFilter(Seller.seller_start))
     dp.message.register(show_feed, F.text=='📜 Просмотреть ленту товаров',
                         StateFilter(Seller.seller_start))
+    dp.callback_query.register(write_prod_name, F.text=='📦 Разместить товар',
+                        StateFilter(Seller.seller_start))
+    dp.callback_query.register(Seller.prod_name_st)
+    dp.callback_query.register(Seller.prod_desc_st)
+    dp.callback_query.register(Seller.prod_photo_st)
+    dp.callback_query.register(Seller.prod_name_st, F.data.startswith('unit:'))
     
     #Админ
     dp.message.register(instruction, F.text=='📘 Инструкция',
@@ -49,21 +55,21 @@ async def start():
                         StateFilter(ProductFeed.product_feed))
     dp.message.register(close_feed, F.text=='🚪 Выйти',
                         StateFilter(ProductFeed.product_feed))
-    dp.callback_query.register(write_to_cart, lambda c: c.data.startswith("add_to_cart:"),
+    dp.callback_query.register(write_to_cart, F.data.startswith("add_to_cart:"),
                         StateFilter(ProductFeed.product_feed))
-    dp.callback_query.register(delete_feed_item, lambda c: c.data.startswith("del_from_feed:"),
+    dp.callback_query.register(delete_feed_item, F.data.startswith("del_from_feed:"),
                         StateFilter(ProductFeed.product_feed))
     dp.message.register(back_to_feed, F.text=='❌ Отмена',
                         StateFilter(ProductFeed.choose_quantity))
     dp.message.register(add_to_cart, ProductFeed.choose_quantity)
 
     #Корзина    
-    dp.callback_query.register(edit_cart_item_quantity, lambda c: c.data.startswith("edit_cart:"),
+    dp.callback_query.register(edit_cart_item_quantity, F.data.startswith("edit_cart:"),
                         StateFilter(Cart.cart))
     dp.message.register(back_to_cart, F.text=='❌ Отмена',
                         StateFilter(Cart.choose_quantity))
     dp.message.register(write_new_quantity, Cart.choose_quantity)
-    dp.callback_query.register(delete_cart_item, lambda c: c.data.startswith("del_cart:"),
+    dp.callback_query.register(delete_cart_item, F.data.startswith("del_cart:"),
                         StateFilter(Cart.cart))
     dp.message.register(purchase, F.text == '✅ Оформить заказ',
                                StateFilter(Cart.cart))
