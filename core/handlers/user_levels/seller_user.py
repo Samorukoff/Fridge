@@ -16,7 +16,7 @@ class Seller(StatesGroup):
     prod_unit_st = State()
     prod_availability_st = State()
     prod_price_st = State()
-    prod_card_complete = State()
+    prod_card_complete_st = State()
 
 async def instruction(message: Message, state: FSMContext):
     await message.answer('Инструкция')
@@ -27,8 +27,8 @@ async def write_prod_name (message: Message, state: FSMContext):
 
 async def write_prod_desc(message: Message, state: FSMContext):
     if message.text == 'Назад':
-        await state.set_state(Seller.prod_name_st)
-        await message.answer('Введите название товара')
+        await state.set_state(Seller.prod_desc_st)
+        await message.answer('Введите описание товара')
         return
 
     prod_card_name = message.text
@@ -38,28 +38,26 @@ async def write_prod_desc(message: Message, state: FSMContext):
 
 async def download_prod_photo(message: Message, state: FSMContext):
     if message.text == 'Назад':
-        await state.set_state(Seller.prod_desc_st)
-        await message.answer('Введите описание товара')
+        await state.set_state(Seller.prod_photo_st)
+        await message.answer('Отправьте фото товара')
         return
 
     prod_card_desc = message.text
     await state.update_data(prod_card_desc=prod_card_desc)
     await state.set_state(Seller.prod_photo_st)
-    await message.answer('Отправьте фото карточки товара')
+    await message.answer('Отправьте фото товара')
 
 async def choose_prod_unit (message: Message, state: FSMContext):
     if message.text == 'Назад':
         await state.set_state(Seller.prod_unit_st)
-        await message.answer ('Выберите единицу измерения кол-ва товара', reply_markup=choose_prod_unit_kb)
+        await message.answer ('Выберите ед. измерения', reply_markup=choose_prod_unit_kb)
         return
-    
-    if message.photo:   
-        prod_card_photo = message.photo[-1].file_id
-        await state.update_data(prod_card_photo = prod_card_photo)
-        await state.set_state(Seller.prod_unit_st)
-        await message.answer ('Выберите единицу измерения кол-ва товара', reply_markup=choose_prod_unit_kb)
-    else:
-        await message.answer('Не подходящий формат сообщения, попробуйте еще раз')
+     
+    prod_card_photo = message.photo[-1].file_id
+    await state.update_data(prod_card_photo = prod_card_photo)
+    await state.set_state(Seller.prod_unit_st)
+    await message.answer ('Выберите единицу измерения кол-ва товара', reply_markup=choose_prod_unit_kb)
+
 
 async def write_prod_availability(callback: CallbackQuery, state: FSMContext):
     prod_card_availability = callback.data.split(':')[1]
@@ -99,7 +97,7 @@ async def product_card_complete (message: Message, state: FSMContext):
         await msg.delete()
         return
 
-    await state.set_state(Seller.prod_card_complete)
+    await state.set_state(Seller.prod_card_complete_st)
     prod_card_availability = float(price)
     await state.update_data(prod_card_availability = prod_card_availability)
     await message.answer ('Ваша карточка товара готова, сейчас покажем...')

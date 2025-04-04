@@ -5,7 +5,7 @@ from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
 
-from ...google_sheets import link_sheet
+from ...google_sheets import link_sheet, GS_LINK
 from ...keyboards.inline import *
 from ...keyboards.reply import *
 
@@ -24,3 +24,6 @@ async def invite_link(message: Message, state: FSMContext):
 
     link_sheet.append_row([token, "unused"])
     await message.answer(f'Одноразовая ссылка готова:\n{link}')
+
+async def give_google_sheets_link (message:Message, state:FSMContext):
+    await message.answer (f'Ссылка с базой данных чат бота в Google Sheets:\n{GS_LINK}')

@@ -4,6 +4,8 @@ from dotenv import load_dotenv
 import gspread
 from google.oauth2.service_account import Credentials
 
+GS_LINK = 'https://docs.google.com/spreadsheets/d/1KopmjRrKL5m9KdLkdKx_yqegZccUftbWTn9Bg-I_c3k/edit?gid=0#gid=0'
+
 #Загружаем переменные виртуального окружения
 load_dotenv()
 

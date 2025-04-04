@@ -35,12 +35,39 @@ async def start():
                         StateFilter(Seller.seller_start))
     dp.message.register(show_feed, F.text=='📜 Просмотреть ленту товаров',
                         StateFilter(Seller.seller_start))
-    dp.callback_query.register(write_prod_name, F.text=='📦 Разместить товар',
+    #Продавец, процесс создания карточки товара
+    dp.message.register(write_prod_name, F.text=='📦 Разместить товар',
                         StateFilter(Seller.seller_start))
-    dp.callback_query.register(Seller.prod_name_st)
-    dp.callback_query.register(Seller.prod_desc_st)
-    dp.callback_query.register(Seller.prod_photo_st)
-    dp.callback_query.register(Seller.prod_name_st, F.data.startswith('unit:'))
+    dp.message.register(write_prod_name, F.text=='Назад',
+                        StateFilter(Seller.prod_desc_st))
+
+    dp.message.register(write_prod_desc, F.text,
+                        StateFilter(Seller.prod_name_st))
+    dp.message.register(write_prod_desc, F.text=='Назад',
+                        StateFilter(Seller.prod_photo_st))
+
+    dp.message.register(download_prod_photo, F.text,
+                        StateFilter(Seller.prod_desc_st))
+    dp.message.register(download_prod_photo, F.text=='Назад',
+                        StateFilter(Seller.prod_unit_st))
+
+    dp.message.register(choose_prod_unit, F.photo,
+                        StateFilter(Seller.prod_photo_st))
+    dp.message.register(choose_prod_unit, F.text=='Назад',
+                        StateFilter(Seller.prod_availability_st))
+
+    dp.callback_query.register(write_prod_availability,
+                               Seller.prod_unit_st, F.data.startswith('unit:'))
+    dp.message.register(write_prod_availability, F.text=='Назад',
+                        StateFilter(Seller.prod_price_st))
+    
+    dp.message.register(write_prod_price, F.text,
+                        StateFilter(Seller.prod_availability_st))
+    dp.message.register(write_prod_price, F.text=='Назад',
+                        StateFilter(Seller.prod_card_complete_st))
+    
+    dp.message.register(product_card_complete, F.text,
+                        StateFilter(Seller.prod_price_st))
     
     #Админ
     dp.message.register(instruction, F.text=='📘 Инструкция',
@@ -48,6 +75,8 @@ async def start():
     dp.message.register(invite_link, F.text=='🔑 Создать ссылку-приглашение',
                         StateFilter(Admin.admin_start))
     dp.message.register(show_feed, F.text=='📜 Просмотреть ленту товаров',
+                        StateFilter(Admin.admin_start))
+    dp.message.register(give_google_sheets_link, F.text=='🔗 Ссылка на GoogleSheets',
                         StateFilter(Admin.admin_start))
 
     #Лента товаров
