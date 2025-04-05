@@ -33,6 +33,18 @@ seller_start_kb = ReplyKeyboardMarkup(keyboard=[[KeyboardButton(text='📘 Ин�
                             one_time_keyboard=True,
                             input_field_placeholder='Выберите действие ⬇️')
 
+seller_create_card_kb = ReplyKeyboardMarkup(keyboard=[[KeyboardButton(text='◀️ Назад')],
+                                                      [KeyboardButton(text='🔄 Перезапуск')]],
+                            resize_keyboard=True,
+                            input_field_placeholder='Выберите действие ⬇️')
+
+seller_confirm_card_kb = ReplyKeyboardMarkup(keyboard=[[KeyboardButton(text='✅ Завершить создание')],
+                                                       [KeyboardButton(text='❌ Переделать полностью')],
+                                                       [KeyboardButton(text='◀️ Назад')],
+                                                       [KeyboardButton(text='🔄 Перезапуск')]],
+                            resize_keyboard=True,
+                            input_field_placeholder='Выберите действие ⬇️')
+
 ################################################ АДМИНИСТРАТОР ##################################################
 
 #Начальная клавиатура администратора

@@ -22,6 +22,8 @@ async def start():
     #Общие
     dp.message.register(starting_work, Command("start"))
     dp.message.register(starting_work, F.text=='🔄 Перезапуск')
+    dp.message.register(starting_work, F.text=='◀️ Назад',
+                        StateFilter(Seller.prod_name_st))
 
     #Покупатель
     dp.message.register(show_feed, F.text=='📜 Просмотреть ленту товаров',
@@ -38,36 +40,41 @@ async def start():
     #Продавец, процесс создания карточки товара
     dp.message.register(write_prod_name, F.text=='📦 Разместить товар',
                         StateFilter(Seller.seller_start))
-    dp.message.register(write_prod_name, F.text=='Назад',
+    dp.message.register(write_prod_name, F.text=='◀️ Назад',
                         StateFilter(Seller.prod_desc_st))
+    dp.message.register(write_prod_name, F.text=='❌ Переделать полностью',
+                        StateFilter(Seller.prod_card_complete_st))
 
     dp.message.register(write_prod_desc, F.text,
                         StateFilter(Seller.prod_name_st))
-    dp.message.register(write_prod_desc, F.text=='Назад',
+    dp.message.register(write_prod_desc, F.text=='◀️ Назад',
                         StateFilter(Seller.prod_photo_st))
 
     dp.message.register(download_prod_photo, F.text,
                         StateFilter(Seller.prod_desc_st))
-    dp.message.register(download_prod_photo, F.text=='Назад',
+    dp.message.register(download_prod_photo, F.text=='◀️ Назад',
                         StateFilter(Seller.prod_unit_st))
 
     dp.message.register(choose_prod_unit, F.photo,
                         StateFilter(Seller.prod_photo_st))
-    dp.message.register(choose_prod_unit, F.text=='Назад',
+    dp.message.register(choose_prod_unit, F.text=='◀️ Назад',
                         StateFilter(Seller.prod_availability_st))
 
     dp.callback_query.register(write_prod_availability,
                                Seller.prod_unit_st, F.data.startswith('unit:'))
-    dp.message.register(write_prod_availability, F.text=='Назад',
+    dp.message.register(write_prod_availability, F.text=='◀️ Назад',
                         StateFilter(Seller.prod_price_st))
     
     dp.message.register(write_prod_price, F.text,
                         StateFilter(Seller.prod_availability_st))
-    dp.message.register(write_prod_price, F.text=='Назад',
+    dp.message.register(write_prod_price, F.text=='◀️ Назад',
                         StateFilter(Seller.prod_card_complete_st))
     
     dp.message.register(product_card_complete, F.text,
                         StateFilter(Seller.prod_price_st))
+
+    dp.message.register(product_card_write, F.text=='✅ Завершить создание',
+                        StateFilter(Seller.prod_complete_st))
     
     #Админ
     dp.message.register(instruction, F.text=='📘 Инструкция',

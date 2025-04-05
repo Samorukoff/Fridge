@@ -61,7 +61,7 @@ async def show_feed (message: Message, state: FSMContext):
     
     #Создание ленты товаров, вывод карточек по порядку
     seller_id_data = seller_sheet.col_values(1) 
-    is_seller = str(user_id) in seller_id_data
+    is_seller = str(user_id) in seller_id_data and user_id != settings.bots.admin_id
 
     for row in items:
 
@@ -70,7 +70,6 @@ async def show_feed (message: Message, state: FSMContext):
         description = row.get("description")
         photo_id = row.get("photo_id")
         date_placement = row.get("date_placement")
-        delivery_time = row.get("delivery_time")
         product_unit = row.get("product_unit")
         availability = row.get("availability")
         price = row.get("price")
@@ -79,10 +78,8 @@ async def show_feed (message: Message, state: FSMContext):
             f"<b>Наименование:</b> {name}\n"
             f"<b>Описание:</b> {description}\n"
             f"<b>Дата размещения:</b> {date_placement}\n"
-            f"<b>Срок поставки:</b> {delivery_time}\n"
-            f"<b>Единица товара:</b> {product_unit}\n"
-            f"<b>Наличие:</b> {availability}\n"
-            f"<b>Цена:</b> {price}"
+            f"<b>Наличие:</b> {availability} {product_unit}\n"
+            f"<b>Цена за {product_unit}:</b> {price}"
         )
 
         product_card = await message.answer_photo(photo=photo_id, caption=caption,
