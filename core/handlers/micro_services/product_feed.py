@@ -79,7 +79,7 @@ async def show_feed (message: Message, state: FSMContext):
             f"<b>Описание:</b> {description}\n"
             f"<b>Дата размещения:</b> {date_placement}\n"
             f"<b>Наличие:</b> {availability} {product_unit}\n"
-            f"<b>Цена за {product_unit}:</b> {price}"
+            f"<b>Цена за {product_unit}:</b> {price:.2f}₽"
         )
 
         product_card = await message.answer_photo(photo=photo_id, caption=caption,
@@ -94,9 +94,9 @@ async def show_feed (message: Message, state: FSMContext):
     await state.update_data(offset=new_offset)
 
     # Показываем кнопку "Еще", если есть товары
-    if new_offset < len(feed_data):
+    if new_offset < len(filtered_feed_data):
         await message.answer("🔽 Загрузить еще товары?", reply_markup=feed_kb)
-    elif new_offset >= len(feed_data):
+    elif new_offset >= len(filtered_feed_data):
         await message.answer("⚠️ Товаров больше нет", reply_markup=feed_kb)
 
 #Выход из ленты товаров
@@ -105,7 +105,7 @@ async def close_feed(message: Message, state: FSMContext):
     previous_state = data.get('previous_state')
     product_cards = data.get('product_cards',[])[::-1]
     user_id = data.get('user_id')
-    await message.answer('Выберите пункт меню', reply_markup=main_kb(user_id))
+    await message.answer('🚪 Вы вышли из ленты товаров', reply_markup=main_kb(user_id))
     for card in product_cards:
         await card.delete()
     await state.clear()

@@ -33,16 +33,13 @@ seller_start_kb = ReplyKeyboardMarkup(keyboard=[[KeyboardButton(text='📘 Ин�
                             one_time_keyboard=True,
                             input_field_placeholder='Выберите действие ⬇️')
 
-seller_create_card_kb = ReplyKeyboardMarkup(keyboard=[[KeyboardButton(text='◀️ Назад')],
-                                                      [KeyboardButton(text='🔄 Перезапуск')]],
-                            resize_keyboard=True,
-                            input_field_placeholder='Выберите действие ⬇️')
-
+#Клавиатура завершения создания карточки товара
 seller_confirm_card_kb = ReplyKeyboardMarkup(keyboard=[[KeyboardButton(text='✅ Завершить создание')],
                                                        [KeyboardButton(text='❌ Переделать полностью')],
                                                        [KeyboardButton(text='◀️ Назад')],
                                                        [KeyboardButton(text='🔄 Перезапуск')]],
                             resize_keyboard=True,
+                            one_time_keyboard=True,
                             input_field_placeholder='Выберите действие ⬇️')
 
 ################################################ АДМИНИСТРАТОР ##################################################
@@ -72,6 +69,12 @@ cancel_kb = ReplyKeyboardMarkup(keyboard=[[KeyboardButton(text='❌ Отмена
                                           [KeyboardButton(text='🔄 Перезапуск')]],
                             resize_keyboard=True,
                             one_time_keyboard=True,
+                            input_field_placeholder='Выберите действие ⬇️')
+
+#Клавиатура для пошаговых проуессов
+step_kb = ReplyKeyboardMarkup(keyboard=[[KeyboardButton(text='◀️ Назад')],
+                                                      [KeyboardButton(text='🔄 Перезапуск')]],
+                            resize_keyboard=True,
                             input_field_placeholder='Выберите действие ⬇️')
 
 #Поиск главной клавиатуры

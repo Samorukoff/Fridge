@@ -1,10 +1,11 @@
 import asyncio
+from datetime import datetime
 
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
 
-from ...google_sheets import feed_sheet, cart_sheet
+from ...google_sheets import feed_sheet, cart_sheet, request_sheet
 
 from ..user_levels.customer_user import Customer
 
@@ -68,7 +69,7 @@ async def show_cart(message: Message, state: FSMContext):
 async def close_cart(message: Message, state: FSMContext):
     data = await state.get_data()
     order_cards = data.get('order_cards', [])[::-1]
-    await message.answer('Выберите пункт меню', reply_markup=customer_start_kb)
+    await message.answer('🚪 Вы вышли из корзины', reply_markup=customer_start_kb)
     for card in order_cards:
         await card.delete()
     await state.clear()
@@ -81,7 +82,6 @@ async def edit_cart_item_quantity(callback: CallbackQuery, state: FSMContext):
     work_piece = callback.data.split(":")[1]
     product_id, availability, price = work_piece.split(",")
     data = await state.get_data()
-    user_id = data.get('user_id')
 
     await state.set_state(Cart.choose_quantity)
     tech_msg = await callback.message.answer ('✍️ Введите количество единиц товара.',
@@ -198,6 +198,20 @@ async def purchase(message: Message, state: FSMContext):
         await asyncio.sleep(3)
         await msg.delete()
         return
+
+    #Перенос всех данных из таблицы корзины в таблицу заявок
+    user_cart_rows = [
+        row for row in cart_data
+        if str(row.get("customer_id")) == str(user_id)
+    ]
+    
+    now = datetime.now().strftime("%d.%m.%Y %H:%M:%S")
+
+    for row in user_cart_rows:
+        row["product_name"] = next(str(r.get("name")) for r in feed_sheet.get_all_records()
+                           if str(r.get("product_id")) == str(row.get("product_id")))
+        row["order_time"] = now
+        request_sheet.append_row(list(row.values()))
 
     #Удаляем строки в обратном порядке
     for row_index in sorted(rows_to_delete, reverse=True):

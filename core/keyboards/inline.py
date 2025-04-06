@@ -5,10 +5,16 @@ from ..google_sheets import seller_sheet
 
 #Меню выбора единицы товара при создании карточки продавцов
 choose_prod_unit_kb = InlineKeyboardMarkup(inline_keyboard=
-                                     [[InlineKeyboardButton(text='килограмм', callback_data='unit:кг')],
-                                      [InlineKeyboardButton(text='литр', callback_data='unit:л')],
-                                      [InlineKeyboardButton(text='штука', callback_data='unit:шт.')],
-                                      [InlineKeyboardButton(text='упаковка', callback_data='unit:уп.')]])
+                                     [[InlineKeyboardButton(text='Килограмм', callback_data='unit:кг')],
+                                      [InlineKeyboardButton(text='Литр', callback_data='unit:л')],
+                                      [InlineKeyboardButton(text='Штука', callback_data='unit:шт.')],
+                                      [InlineKeyboardButton(text='Упаковка', callback_data='unit:уп.')]])
+
+#Меню выбора адресатов для рассылки от администратора
+choose_adressees_kb = InlineKeyboardMarkup(inline_keyboard=
+                                     [[InlineKeyboardButton(text='Покупатели', callback_data='adr:customer')],
+                                      [InlineKeyboardButton(text='Продавцы', callback_data='adr:seller')],
+                                      [InlineKeyboardButton(text='Все пользователи', callback_data='adr:all')]])
 
 #Кнопки карточек в ленте товаров
 def add_to_cart_kb(user_id, product_id, availability, price):
@@ -29,3 +35,11 @@ def edit_cart_kb(product_id, availability, price):
                                                         [InlineKeyboardButton(text='🗑 Удалить товар',
                                             callback_data=f"del_cart:{product_id}")]])
     return customer_cart_inline_kb
+
+#Кнопки под заявками для продавца
+def approve_request(customer_id, product_id):
+    approve_request_kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text='✅ Одобрить заявку',
+                                            callback_data=f"request:apply:{customer_id},{product_id}")],
+                                                        [InlineKeyboardButton(text='❌ Отклонить заявку',
+                                            callback_data=f"request:deny:{customer_id},{product_id}")]])
+    return approve_request_kb

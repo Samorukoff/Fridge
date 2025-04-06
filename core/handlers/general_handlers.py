@@ -4,7 +4,7 @@ from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
 
-from ..google_sheets import seller_sheet, link_sheet
+from ..google_sheets import customer_sheet, seller_sheet, link_sheet
 
 from ..keyboards.inline import *
 from ..keyboards.reply import *
@@ -55,6 +55,8 @@ async def starting_work(message: Message, state: FSMContext):
         #Простой покупатель
         else:
             await state.set_state(Customer.customer_start)   
+            if str(message.from_user.id) not in customer_sheet.col_values(1):
+                customer_sheet.append_row([message.from_user.id])
             await message.answer(f"✨ Добро пожаловать в магазин!\
                          \nПожалуйста, выберите пункт меню", reply_markup=customer_start_kb)
     

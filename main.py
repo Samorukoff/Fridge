@@ -24,6 +24,8 @@ async def start():
     dp.message.register(starting_work, F.text=='🔄 Перезапуск')
     dp.message.register(starting_work, F.text=='◀️ Назад',
                         StateFilter(Seller.prod_name_st))
+    dp.message.register(starting_work, F.text=='◀️ Назад',
+                        StateFilter(Admin.admin_mailing))
 
     #Покупатель
     dp.message.register(show_feed, F.text=='📜 Просмотреть ленту товаров',
@@ -37,6 +39,11 @@ async def start():
                         StateFilter(Seller.seller_start))
     dp.message.register(show_feed, F.text=='📜 Просмотреть ленту товаров',
                         StateFilter(Seller.seller_start))
+    
+    dp.message.register(check_requests, F.text=='📝 Заявки',
+                        StateFilter(Seller.seller_start))
+    dp.callback_query.register(apply_requests,
+                        Seller.check_requests_st, F.data.startswith('request:'))
     #Продавец, процесс создания карточки товара
     dp.message.register(write_prod_name, F.text=='📦 Разместить товар',
                         StateFilter(Seller.seller_start))
@@ -61,7 +68,7 @@ async def start():
                         StateFilter(Seller.prod_availability_st))
 
     dp.callback_query.register(write_prod_availability,
-                               Seller.prod_unit_st, F.data.startswith('unit:'))
+                        Seller.prod_unit_st, F.data.startswith('unit:'))
     dp.message.register(write_prod_availability, F.text=='◀️ Назад',
                         StateFilter(Seller.prod_price_st))
     
@@ -74,7 +81,7 @@ async def start():
                         StateFilter(Seller.prod_price_st))
 
     dp.message.register(product_card_write, F.text=='✅ Завершить создание',
-                        StateFilter(Seller.prod_complete_st))
+                        StateFilter(Seller.prod_card_complete_st))
     
     #Админ
     dp.message.register(instruction, F.text=='📘 Инструкция',
@@ -85,7 +92,15 @@ async def start():
                         StateFilter(Admin.admin_start))
     dp.message.register(give_google_sheets_link, F.text=='🔗 Ссылка на GoogleSheets',
                         StateFilter(Admin.admin_start))
-
+    
+    dp.message.register(mailing, F.text=='📤 Рассылка',
+                        StateFilter(Admin.admin_start))
+    dp.message.register(mailing, F.text=='◀️ Назад',
+                        StateFilter(Admin.admin_mailing_choose))
+    dp.message.register(choose_adressees, F.text, StateFilter(Admin.admin_mailing))
+    dp.callback_query.register(send_adressees, Admin.admin_mailing_choose,
+                               F.data.startswith("adr:"))
+    
     #Лента товаров
     dp.message.register(show_feed, F.text=='🔽 Показать еще',
                         StateFilter(ProductFeed.product_feed))
