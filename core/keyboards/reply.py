@@ -1,4 +1,4 @@
-from aiogram.types import (KeyboardButton, ReplyKeyboardMarkup, ReplyKeyboardRemove)
+from aiogram.types import (KeyboardButton, ReplyKeyboardMarkup)
 
 from core.settings import settings
 from ..google_sheets import seller_sheet
@@ -27,7 +27,7 @@ customer_cart_kb = ReplyKeyboardMarkup(keyboard=[[KeyboardButton(text='✅ Оф�
 seller_start_kb = ReplyKeyboardMarkup(keyboard=[[KeyboardButton(text='📘 Инструкция'), 
                                                  KeyboardButton(text='📝 Заявки')],
                                                 [KeyboardButton(text='📦 Разместить товар'), 
-                                                 KeyboardButton(text='📜 Просмотреть ленту товаров')],
+                                                 KeyboardButton(text='📜 Просмотреть ленту моих товаров')],
                                                 [KeyboardButton(text='🔄 Перезапуск')]],
                             resize_keyboard=True,
                             one_time_keyboard=True,
@@ -37,6 +37,13 @@ seller_start_kb = ReplyKeyboardMarkup(keyboard=[[KeyboardButton(text='📘 Ин�
 seller_confirm_card_kb = ReplyKeyboardMarkup(keyboard=[[KeyboardButton(text='✅ Завершить создание')],
                                                        [KeyboardButton(text='❌ Переделать полностью')],
                                                        [KeyboardButton(text='◀️ Назад')],
+                                                       [KeyboardButton(text='🔄 Перезапуск')]],
+                            resize_keyboard=True,
+                            one_time_keyboard=True,
+                            input_field_placeholder='Выберите действие ⬇️')
+
+#Клавиатура выхода из меню заявок
+leave_requests_kb = ReplyKeyboardMarkup(keyboard=[[KeyboardButton(text='🚪 Выйти')],
                                                        [KeyboardButton(text='🔄 Перезапуск')]],
                             resize_keyboard=True,
                             one_time_keyboard=True,

@@ -38,12 +38,12 @@ async def show_cart(message: Message, state: FSMContext):
             product_id = cart_row.get("product_id")
             quantity = cart_row.get("quantity")
             total_price = float(cart_row.get("total_price"))
+            order_pick_date = cart_row.get("order_pick_date")
             for feed_row in feed_data:
                 if str(feed_row.get("product_id")) == str(product_id):
                     name = feed_row.get("name")
                     description = feed_row.get("description")
                     photo_id = feed_row.get("photo_id")
-                    delivery_time = feed_row.get("delivery_time")
                     product_unit = feed_row.get("product_unit")
                     price = feed_row.get("price")
                     availability = feed_row.get("availability")
@@ -51,9 +51,9 @@ async def show_cart(message: Message, state: FSMContext):
                     caption = (
                         f"<b>Наименование:</b> {name}\n"
                         f"<b>Описание:</b> {description}\n"
-                        f"<b>Срок поставки:</b> {delivery_time}\n"
+                        f"<b>Дата получения:</b> {order_pick_date}\n"
                         f"<b>Объем заказа:</b> {quantity} {product_unit}\n"
-                        f"<b>Итоговая цена:</b> {total_price}"
+                        f"<b>Итоговая цена:</b> {total_price:.2f}₽"
                     )
 
                     order_card = await message.answer_photo(photo=photo_id, caption=caption,
@@ -81,7 +81,6 @@ async def edit_cart_item_quantity(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
     work_piece = callback.data.split(":")[1]
     product_id, availability, price = work_piece.split(",")
-    data = await state.get_data()
 
     await state.set_state(Cart.choose_quantity)
     tech_msg = await callback.message.answer ('✍️ Введите количество единиц товара.',
@@ -129,18 +128,25 @@ async def write_new_quantity(message: Message, state: FSMContext):
     row = next((r for r in cart_data if str(r.get("customer_id")) == str(user_id)
                 and str(r.get("product_id")) == str(product_id)), None)
     if row:
-        row["quantity"] = quantity
-
         total_price = float(price) * float(quantity)
         total_price = "{:.2f}".format(total_price)
-        row["total_price"] = total_price
+
+        old_quantity = row.get("quantity")
 
         #Найдем индекс строки в GoogleSheets
         row_index = cart_data.index(row) + 2  #+2, потому что get_all_records() возвращает список без заголовка
 
         #Обновляем ячейки в Google Sheets
-        cart_sheet.update(f"C{row_index}", [[row["quantity"]]])
-        cart_sheet.update(f"D{row_index}", [[row["total_price"]]])
+        cart_sheet.update_cell(row_index, 3, quantity)
+        cart_sheet.update_cell(row_index, 4, total_price)
+
+        #Корректируем кол-во в ленте товаров
+        feed_data = feed_sheet.get_all_records()
+        availability_row_index = next(
+            (i + 2 for i, r in enumerate(feed_data) if str(r.get("product_id")) == str(product_id)),
+            None
+        )
+        feed_sheet.update_cell(availability_row_index, 7, availability - (quantity - old_quantity))
     
     else:
         msg = await message.answer('⚠️ Ошибка: товар не найден в корзине!')
@@ -154,6 +160,7 @@ async def write_new_quantity(message: Message, state: FSMContext):
     for card in order_cards:
         await card.delete()
     await state.clear()
+    await state.set_state(Customer.customer_start)
 
 #Удаление товара из корзины
 async def delete_cart_item(callback: CallbackQuery, state: FSMContext):
@@ -170,6 +177,23 @@ async def delete_cart_item(callback: CallbackQuery, state: FSMContext):
         row_index = cart_data.index(row) + 2
         cart_sheet.delete_rows(row_index)
         await callback.message.delete()
+        data = await state.get_data()
+        order_cards = data.get('order_cards')
+        order_cards = [
+            msg for msg in order_cards if msg.message_id != callback.message.message_id
+        ]
+        await state.update_data(order_cards=order_cards)
+
+        #Корректируем кол-во в ленте товаров
+        feed_data = feed_sheet.get_all_records()
+        availability_row_index = next(
+            (i + 2 for i, r in enumerate(feed_data) if str(r.get("product_id")) == str(product_id)),
+            None
+        )
+        quantity = row.get("quantity")
+        availability = feed_sheet.cell(availability_row_index, 7).value
+        feed_sheet.update_cell(availability_row_index, 7, int(availability) + int(quantity))
+
         msg = await callback.message.answer('✅ Товар успешно удален из корзины!', reply_markup=customer_start_kb)
         await asyncio.sleep(3)
         await msg.delete()

@@ -2,6 +2,7 @@ from aiogram import Bot, Dispatcher, F
 import logging
 import asyncio
 from aiogram.filters import Command, StateFilter
+from aiogram_calendar.simple_calendar import SimpleCalendarCallback
 
 from core.handlers.micro_services.product_feed import *
 from core.handlers.micro_services.cart import *
@@ -27,21 +28,16 @@ async def start():
     dp.message.register(starting_work, F.text=='◀️ Назад',
                         StateFilter(Admin.admin_mailing))
 
-    #Покупатель
-    dp.message.register(show_feed, F.text=='📜 Просмотреть ленту товаров',
-                        StateFilter(Customer.customer_start))
-    dp.message.register(show_cart, F.text=='🛒 Просмотреть корзину',
-                        StateFilter(Customer.customer_start))
-    dp.message.register(instruction, F.text=='📘 Инструкция',
-                        StateFilter(Customer.customer_start))
     #Продавец
     dp.message.register(instruction, F.text=='📘 Инструкция',
                         StateFilter(Seller.seller_start))
-    dp.message.register(show_feed, F.text=='📜 Просмотреть ленту товаров',
+    dp.message.register(show_feed, F.text=='📜 Просмотреть ленту моих товаров',
                         StateFilter(Seller.seller_start))
     
     dp.message.register(check_requests, F.text=='📝 Заявки',
                         StateFilter(Seller.seller_start))
+    dp.message.register(leave_requests, F.text=='🚪 Выйти',
+                        StateFilter(Seller.check_requests_st))
     dp.callback_query.register(apply_requests,
                         Seller.check_requests_st, F.data.startswith('request:'))
     #Продавец, процесс создания карточки товара
@@ -101,6 +97,14 @@ async def start():
     dp.callback_query.register(send_adressees, Admin.admin_mailing_choose,
                                F.data.startswith("adr:"))
     
+     #Покупатель
+    dp.message.register(show_feed, F.text=='📜 Просмотреть ленту товаров',
+                        StateFilter(Customer.customer_start))
+    dp.message.register(show_cart, F.text=='🛒 Просмотреть корзину',
+                        StateFilter(Customer.customer_start))
+    dp.message.register(instruction, F.text=='📘 Инструкция',
+                        StateFilter(Customer.customer_start))
+
     #Лента товаров
     dp.message.register(show_feed, F.text=='🔽 Показать еще',
                         StateFilter(ProductFeed.product_feed))
@@ -112,7 +116,9 @@ async def start():
                         StateFilter(ProductFeed.product_feed))
     dp.message.register(back_to_feed, F.text=='❌ Отмена',
                         StateFilter(ProductFeed.choose_quantity))
-    dp.message.register(add_to_cart, ProductFeed.choose_quantity)
+    dp.message.register(check_and_choose_date, ProductFeed.choose_quantity)
+    dp.callback_query.register(add_to_cart, SimpleCalendarCallback.filter(),
+                               StateFilter(ProductFeed.choosing_date))
 
     #Корзина    
     dp.callback_query.register(edit_cart_item_quantity, F.data.startswith("edit_cart:"),

@@ -28,7 +28,6 @@ async def instruction(message: Message):
 
 #Вывод заявок
 async def check_requests(message: Message, state: FSMContext, bot: Bot):
-    await state.set_state(Seller.check_requests_st)
 
     feed_data = feed_sheet.get_all_records()
     request_data = request_sheet.get_all_records()
@@ -41,42 +40,69 @@ async def check_requests(message: Message, state: FSMContext, bot: Bot):
     our_requests = [
         row for row in request_data if str(row.get("product_id")) in our_products 
     ]
+    req_cards = []
+    if our_requests:
+        await state.set_state(Seller.check_requests_st)
+        await message.answer ('📋 Актуальные заявки:', reply_markup=leave_requests_kb)
+        for row in our_requests:
+            customer_id = row.get("customer_id")
+            product_id = row.get("product_id")
+            customer = await bot.get_chat(customer_id)
+            product_name = row.get("product_name")
+            quantity = row.get("quantity")
+            total_price = float(row.get("total_price"))
+            total_price = "{:.2f}".format(total_price)
+            order_time = row.get("order_time")
+            order_pick_date = row.get("order_pick_date")
 
-    for row in our_requests:
-        customer_id = row.get("customer_id")
-        product_id = row.get("product_id")
-        customer = await bot.get_chat(customer_id)
-        product_name = row.get("product_name")
-        quantity = row.get("quantity")
-        total_price = row.get("total_price")
-        order_time = row.get("order_time")
+            caption = (
+                f"<b>Профиль заказчика:</b> @{customer.username}\n"
+                f"<b>Имя заказчика:</b> {customer.first_name} {customer.last_name}\n"
+                f"<b>Наименование товара:</b> {product_name}\n"
+                f"<b>Дата:</b> {order_time.split(' ')[0]}\n"
+                f"<b>Время:</b> {order_time.split(' ')[1]}\n"
+                f"<b>Кол-во позиций:</b> {quantity}\n"
+                f"<b>Стоимость заказа:</b> {total_price}₽\n"
+                f"<b>Дата выдачи:</b> {order_pick_date}"
+            )
+            request_card = await message.answer(caption, parse_mode='HTML',
+                                                reply_markup=approve_request(customer_id, product_id))
+            req_cards.append(request_card)
+            await state.update_data(req_cards=req_cards)
+    else:
+        await message.answer('⚠️ Заявок не найдено.')
 
-        caption = (
-            f"<b>Профиль заказчика:</b> @{customer.username}\n"
-            f"<b>Имя заказчика:</b> {customer.first_name} {customer.last_name}\n"
-            f"<b>Наименование товара:</b> {product_name}\n"
-            f"<b>Дата:</b> {order_time.split(' ')[0]}\n"
-            f"<b>Время:</b> {order_time.split(' ')[1]}\n"
-            f"<b>Кол-во позиций:</b> {quantity}\n"
-            f"<b>Стоимость заказа:</b> {total_price}₽"
-        )
-        await message.answer(caption, parse_mode='HTML', reply_markup=approve_request(customer_id, product_id))
+#Выход из меню заявок
+async def leave_requests(message: Message, state: FSMContext):
+    data = await state.get_data()
+    req_cards = data.get('req_cards', [])[::-1]
+    if req_cards:
+        for card in req_cards:
+            await card.delete()
+    await state.clear()
+    await state.set_state(Seller.seller_start)
+    await message.answer('🚪 Вы вышли из меню запросов', reply_markup=seller_start_kb)
 
-#Одобрение заявки
+#Одобрение/Отклонение заявки
 async def apply_requests(callback: CallbackQuery, state: FSMContext, bot: Bot):
     status, work_piece = callback.data.split(':')[1:]
     customer_id, product_id = work_piece.split(',')
+    customer = await bot.get_chat(customer_id)
     request_data = request_sheet.get_all_records()
 
     #Поиск доп. значений о позиции
-    req = next(row for row in request_data if str(row.get('customer_id')) == customer_id
-         and str(row.get('product_id')) == product_id)
+    req = next(
+        (row for row in request_data if str(row.get('customer_id')) == customer_id
+         and str(row.get('product_id')) == product_id),
+         None
+    )
     
     product_name = req.get('product_name')
     quantity = req.get('quantity')
     total_price = float(str(req.get('total_price')).replace(',', '.'))
     total_price = "{:.2f}".format(total_price)
     order_time = req.get('order_time')
+    order_pick_date = req.get('order_pick_date')
 
     #Очистка заявки
     rows_to_delete = [i + 2 for i, row in enumerate(request_data)
@@ -87,20 +113,42 @@ async def apply_requests(callback: CallbackQuery, state: FSMContext, bot: Bot):
         request_sheet.delete_rows(row_index)
     
     await callback.message.delete()
+    data = await state.get_data()
+    req_cards = data.get('req_cards')
+    req_cards = [
+        msg for msg in req_cards if msg.message_id != callback.message.message_id
+    ]
+    await state.update_data(req_cards=req_cards)
 
     #Рассылка
     if status == 'apply':
         await bot.send_message(int(customer_id),
-                               f'✅ Ваш заказ от {order_time.split(" ")[0]}\
-                               на {quantity} единиц позиции'
-                               f'"{product_name}" на сумму {total_price} был одобрен!'
+                               f'✅ Ваш заказ от {order_time.split(" ")[0]} '
+                               f'на {quantity} единиц позиции "{product_name}" '
+                               f'на сумму {total_price}₽ был одобрен!\n'
+                               f'Дата получения: {order_pick_date}\n'
                                f'Ваш код: {random.randint(100000, 999999)}')
+        await callback.message.answer(f'✅ Заказ пользователя @{customer.username} от {order_time.split(" ")[0]} '
+                                      f'на {quantity} единиц позиции "{product_name}" '
+                                      f'на сумму {total_price}₽ был одобрен!\n'
+                                      f'Дата выдачи: {order_pick_date}')
     if status == 'deny':
-        await bot.send_message(int(customer_id),
-                               f'❌ Ваш заказ от {order_time.split(" ")[0]}\
-                               на {quantity} единиц позиции'
-                               f'"{product_name}" на сумму {total_price} был отклонен!')
+        #Корректируем кол-во в ленте товаров
+        feed_data = feed_sheet.get_all_records()
+        availability_row_index = next(
+            (i + 2 for i, r in enumerate(feed_data) if str(r.get("product_id")) == str(product_id)),
+            None
+        )
+        availability = feed_sheet.cell(availability_row_index, 7).value
+        feed_sheet.update_cell(availability_row_index, 7, int(availability) + int(quantity))
 
+        await bot.send_message(int(customer_id),
+                                f'❌ Ваш заказ от {order_time.split(" ")[0]} '
+                                f'на {quantity} единиц позиции "{product_name}" '
+                                f'на сумму {total_price}₽ был отклонен.')
+        await callback.message.answer(f'❌ Заказ пользователя @{customer.username} от {order_time.split(" ")[0]} '
+                                      f'на {quantity} единиц позиции "{product_name}" '
+                                      f'на сумму {total_price}₽ был отклонен.')
 
 #Конструктор карточки товара
 async def write_prod_name (message: Message, state: FSMContext):

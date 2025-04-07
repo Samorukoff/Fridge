@@ -1,7 +1,4 @@
-import asyncio
-
-from aiogram.types import Message, CallbackQuery
-from aiogram.fsm.state import State, StatesGroup
+from aiogram.types import Message
 from aiogram.fsm.context import FSMContext
 
 from ..google_sheets import customer_sheet, seller_sheet, link_sheet
@@ -12,8 +9,6 @@ from ..keyboards.reply import *
 from core.handlers.user_levels.admin_user import Admin
 from core.handlers.user_levels.seller_user import Seller
 from core.handlers.user_levels.customer_user import Customer
-
-from core.handlers.micro_services.product_feed import ProductFeed
 
 from core.settings import settings
 

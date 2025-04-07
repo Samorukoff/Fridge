@@ -1,12 +1,12 @@
 import asyncio
+from datetime import datetime, timedelta
 
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
+from aiogram_calendar.simple_calendar import SimpleCalendar, SimpleCalendarCallback
 
 from ...google_sheets import feed_sheet, cart_sheet
-
-from ..user_levels.customer_user import Customer
 
 from ...keyboards.inline import *
 from ...keyboards.reply import *
@@ -14,6 +14,7 @@ from ...keyboards.reply import *
 class ProductFeed(StatesGroup):
     product_feed = State()
     choose_quantity = State()
+    choosing_date = State()
 
 #Число товаров, выводимых за один раз
 ITEMS_PER_PAGE = 7
@@ -145,12 +146,10 @@ async def back_to_feed(message: Message, state:FSMContext):
     await tech_msg.delete()
 
 #Проверка запрошенного количества и запись данных в таблицу (корзину)
-async def add_to_cart(message: Message, state:FSMContext):
+async def check_and_choose_date(message: Message, state:FSMContext):
 
     #Достаем необходимые переменные
     data = await state.get_data()
-    user_id = data.get('user_id')
-    product_id = data.get('product_id')
     availability = int(data.get('availability'))
     price = float(data.get('price'))
 
@@ -172,11 +171,60 @@ async def add_to_cart(message: Message, state:FSMContext):
     
     total_price = float(price) * float(quantity)
     total_price = "{:.2f}".format(total_price)
+    await state.update_data(total_price=total_price)
+    await state.update_data(quantity=quantity)
 
-    #Запись в таблицу (корзину)
-    cart_sheet.append_row([user_id, product_id, quantity, total_price])
-    await message.answer('✅ Товар успешно добавлен в корзину!\nВыберите еще', reply_markup=feed_kb)
-    await state.set_state(ProductFeed.product_feed)
+    await message.answer("📅 Пожалуйста, выберите дату получения заказа:",
+                         reply_markup=await SimpleCalendar().start_calendar())
+    await state.set_state(ProductFeed.choosing_date)
+
+async def add_to_cart(callback_query: CallbackQuery, callback_data: SimpleCalendarCallback, state: FSMContext):
+    data = await state.get_data()
+    user_id = data.get('user_id')
+    product_id = data.get('product_id')
+    availability = data.get('availability')
+    quantity = data.get('quantity')
+    total_price = data.get('total_price')
+
+    #Обработка выбранной с календаря даты
+    selected, date = await SimpleCalendar().process_selection(callback_query, callback_data)
+
+    if selected:
+        now = datetime.now()
+        tomorrow = now + timedelta(days=1)
+        max_date = now + timedelta(days=90)
+
+        if date > max_date:
+            await callback_query.message.answer(
+                "📅 Дата получения не может быть позже 90 дней от сегодняшнего дня.\n"
+                "Пожалуйста, выберите другую дату:",
+                reply_markup=await SimpleCalendar().start_calendar()
+            )
+            return
+
+        elif date < tomorrow:
+            await callback_query.message.answer(
+                "📅 Заказ можно оформить только на завтра или позже.\n"
+                "Пожалуйста, выберите другую дату:",
+                reply_markup=await SimpleCalendar().start_calendar()
+            )
+            return
+        
+        order_pick_date = date.strftime('%d.%m.%Y')
+
+        #Запись в таблицу (корзину)
+        cart_sheet.append_row([user_id, product_id, quantity, total_price, order_pick_date])
+
+        # #Корректируем кол-во в ленте товаров
+        feed_data = feed_sheet.get_all_records()
+        availability_row_index = next(
+            (i + 2 for i, row in enumerate(feed_data) if str(row.get("product_id")) == str(product_id)),
+            None
+        )
+        feed_sheet.update_cell(availability_row_index, 7, int(availability) - int(quantity))
+
+        await callback_query.message.answer('✅ Товар успешно добавлен в корзину!\nВыберите еще', reply_markup=feed_kb)
+        await state.set_state(ProductFeed.product_feed)
 
 #Удаление товара из ленты
 async def delete_feed_item(callback: CallbackQuery, state: FSMContext):
@@ -190,6 +238,12 @@ async def delete_feed_item(callback: CallbackQuery, state: FSMContext):
         row_index = feed_data.index(row) + 2
         feed_sheet.delete_rows(row_index)
         await callback.message.delete()
+        data = await state.get_data()
+        product_cards = data.get('product_cards')
+        product_cards = [
+            msg for msg in product_cards if msg.message_id != callback.message.message_id
+        ]
+        await state.update_data(product_cards=product_cards)
         msg = await callback.message.answer('✅ Карточка товара успешно удалена')
         await asyncio.sleep(3)
         await msg.delete()
